@@ -1,4 +1,4 @@
-package paracne;
+package common;
 
 import java.util.ArrayList;
 
