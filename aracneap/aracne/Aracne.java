@@ -302,10 +302,12 @@ public class Aracne {
 	private static void runConsolidate(File outputFolder, boolean nobonferroni, Double consolidatePvalue) throws IOException {
 		BootstrapConsolidator c = new BootstrapConsolidator(nobonferroni);
 		c.mergeFiles(outputFolder);
+		String outputFile = outputFolder+"/network.txt";
 
-		// P-value for the Poisson distribution. Aka how many times an edge has to appear in the bootstraps to be kept.
+		
+		// consolidatePvalue is the P-value for the Poisson distribution. Aka how many times an edge has to appear in the bootstraps to be kept.
 		// Hard-coded to 0.3 in the original ARACNe
-		c.writeSignificant(outputFolder+"/finalNetwork_4col.tsv", consolidatePvalue);
+		c.writeSignificant(outputFile, consolidatePvalue);
 
 		System.out.println("\n        :");
 		System.out.println("       :");

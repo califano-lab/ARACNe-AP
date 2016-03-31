@@ -96,6 +96,10 @@ public class BootstrapConsolidator {
 		int totalCount = tfs.size()*targets.size();
 		try{
 			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outFile)));
+
+			// Header
+			bw.write("Regulator\tTarget\tMI\tpvalue\n");
+
 			String[] keys = edgesOccurrences.keySet().toArray(new String[0]);
 			for(String key : keys){
 				int occurrence = edgesOccurrences.get(key);

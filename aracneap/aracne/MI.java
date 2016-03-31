@@ -606,7 +606,7 @@ public class MI {
 			// TODO System.arraycopy may be faster for hundreds of samples
 
 			// Operations to put points in different quadrants
-			// TODO the splitX-X1 can be precomputer for future optimization
+			// TODO the splitX-X1 can be precomputed for future optimization
 			if(pointsInQuadrant1 > 2){
 				short[] x1 = Arrays.copyOfRange(libraryX1, 0, pointsInQuadrant1);
 				short[] y1 = Arrays.copyOfRange(libraryY1, 0, pointsInQuadrant1);
