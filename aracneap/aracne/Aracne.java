@@ -288,7 +288,7 @@ public class Aracne {
 		// And write out the single bootstrap network
 		File outputFile;
 		if(nobootstrap){
-			outputFile = new File(outputFolder.getAbsolutePath()+"/network.txt");
+			outputFile = new File(outputFolder.getAbsolutePath()+"/nobootstrap_network.txt");
 		} else {
 			outputFile = new File(outputFolder.getAbsolutePath()+"/bootstrapNetwork_"+processId+".txt");
 		}
@@ -335,6 +335,10 @@ public class Aracne {
 			int removed = 0;
 
 			BufferedWriter bw = new BufferedWriter(new FileWriter(finalDPIfile));
+			
+			// Header
+			bw.write("Regulator\tTarget\tMI\n");
+
 			for(String k : finalNet.keySet()){
 				HashSet<String> tr = null;
 				if(removedEdges.containsKey(k)){
