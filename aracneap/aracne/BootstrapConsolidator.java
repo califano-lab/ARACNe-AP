@@ -49,18 +49,23 @@ public class BootstrapConsolidator {
 		        try {
 		        	BufferedReader br = new BufferedReader(new FileReader(file));
 		        	String line = "";
+		        	boolean firstline = true;
 		        	while((line = br.readLine()) != null){
-		        		String[] sp = line.split("\t");
-		        		String key = sp[0]+"#"+sp[1]; // edge key
-		        		tfs.add(sp[0]);
-		        		targets.add(sp[1]);
-		        		if(edgesOccurrences.containsKey(key)){
-		        			edgesOccurrences.put(key, edgesOccurrences.get(key)+1);
-		        			mi.put(key, mi.get(key)+Double.parseDouble(sp[2]));
-		        		}
-		        		else{
-		        			edgesOccurrences.put(key, 1);
-		        			mi.put(key, Double.parseDouble(sp[2]));
+		        		if(firstline){
+		        			firstline=false;
+		        		} else {
+			        		String[] sp = line.split("\t");
+			        		String key = sp[0]+"#"+sp[1]; // edge key
+			        		tfs.add(sp[0]);
+			        		targets.add(sp[1]);
+			        		if(edgesOccurrences.containsKey(key)){
+			        			edgesOccurrences.put(key, edgesOccurrences.get(key)+1);
+			        			mi.put(key, mi.get(key)+Double.parseDouble(sp[2]));
+			        		}
+			        		else{
+			        			edgesOccurrences.put(key, 1);
+			        			mi.put(key, Double.parseDouble(sp[2]));
+			        		}
 		        		}
 		        	}
 		        	br.close();
