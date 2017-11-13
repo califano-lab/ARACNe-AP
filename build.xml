@@ -52,8 +52,8 @@
         </javadoc>
     </target>
 
-    <!--Creates the deployable jar file  -->
-    <target name="jar" depends="compile">
+    <!--Creates the deployable jar file for ARACNe -->
+    <target name="aracne" depends="compile">
         <jar destfile="${dist.dir}\aracne.jar" basedir="${build.dir}">
             <manifest>
                 <attribute name="Main-Class" value="aracne.Aracne" />
@@ -62,7 +62,17 @@
         </jar>
     </target>
 
-    <target name="main" depends="compile, jar, docs">
+    <!--Creates the deployable jar file for pARACNe -->
+    <target name="paracne" depends="compile">
+        <jar destfile="${dist.dir}\paracne.jar" basedir="${build.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="aracne.Paracne" />
+            </manifest>
+            <zipgroupfileset dir="${lib.dir}" includes="**/*.jar"/>
+        </jar>
+    </target>
+
+    <target name="main" depends="aracne, paracne, compile, docs">
         <description>Main target</description>
     </target>
 
