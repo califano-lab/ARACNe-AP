@@ -63,16 +63,16 @@
     </target>
 
     <!--Creates the deployable jar file for pARACNe -->
-    <target name="paracne" depends="compile">
-        <jar destfile="${dist.dir}\paracne.jar" basedir="${build.dir}">
+    <target name="hparacne" depends="compile">
+        <jar destfile="${dist.dir}\hparacne.jar" basedir="${build.dir}">
             <manifest>
-                <attribute name="Main-Class" value="aracne.Paracne" />
+                <attribute name="Main-Class" value="aracne.hpAracne" />
             </manifest>
             <zipgroupfileset dir="${lib.dir}" includes="**/*.jar"/>
         </jar>
     </target>
 
-    <target name="main" depends="aracne, paracne, compile, docs">
+    <target name="main" depends="aracne, hparacne, compile, docs">
         <description>Main target</description>
     </target>
 

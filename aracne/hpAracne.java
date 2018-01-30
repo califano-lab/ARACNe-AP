@@ -25,7 +25,7 @@ import common.DataMatrix;
 import common.DataVector;
 
 
-public class Paracne {
+public class hpAracne {
 	// Variable definition
 	static NumberFormat formatter = new DecimalFormat("0.###E0");
 	static float simCut = 0; // In the original paper this was a parameter. E.g. if two TFs have a very high MI, DPI is not calculated

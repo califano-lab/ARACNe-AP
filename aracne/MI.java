@@ -196,7 +196,7 @@ public class MI {
 	}
 
 	/**
-	 * get bootstraps with pre-computed bootsamples for Paracne.
+	 * get bootstraps with pre-computed bootsamples for hpAracne.
 	 *
 	 * @param data the data
 	 * @param tfList the tf list
@@ -295,7 +295,7 @@ public class MI {
 	}
 
 	/**
-	 * computeMI for DataVectors when data contains NA values Paracne
+	 * computeMI for DataVectors when data contains NA values hpAracne
 	 * 
 	 * @param vectorX
 	 * @param vectorY
