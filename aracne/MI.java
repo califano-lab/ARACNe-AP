@@ -476,7 +476,7 @@ public class MI {
 
 	// This method takes into consideration NAs
 	public double calibrateMIThresholdNA(HashMap<String, DataVector> _data, int randomPaircount, double miPvalue, int _seed){
-		System.out.println("Finding threshold for NA "+randomPaircount+" gene pairs");
+		System.out.println("Finding threshold for dataset with NAs, using "+randomPaircount+" feature pairs");
 
 		HashMap<String, DataVector> tempData = (HashMap<String, DataVector>)_data.clone();
 		Random r = new Random(_seed);
