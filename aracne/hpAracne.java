@@ -15,23 +15,18 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Random;
 
-import aracne.BootstrapConsolidator;
-import aracne.DPI;
-import aracne.MI;
-
-import common.DataParser;
-import common.ExpressionMatrix;
 import common.DataMatrix;
+import common.DataParser;
 import common.DataVector;
+import common.ExpressionMatrix;
 
 
-public class hpAracne {
+public class hpAracne{
 	// Variable definition
 	static NumberFormat formatter = new DecimalFormat("0.###E0");
 	static float simCut = 0; // In the original paper this was a parameter. E.g. if two TFs have a very high MI, DPI is not calculated
-	final static int geneNumberInMIthresholding = 1000000;
+	final static int geneNumberInMIthresholding = 1000;
 	static Random random = new Random();
-	private static boolean singlemode = false;
 
 	// Main Method
 	public static void main(String[] args) throws Exception {
@@ -39,15 +34,18 @@ public class hpAracne {
 
 		//// Parse arguments
 		CmdLineParser parser = new CmdLineParser();
-		CmdLineParser.Option optionExpressionFile1 = parser.addStringOption('e', "expfile_upstream");
+		CmdLineParser.Option optionExpressionFile = parser.addStringOption('e', "expfile");
 		CmdLineParser.Option optionTranscriptionFactorsFile = parser.addStringOption('t', "tfs");
 		CmdLineParser.Option optionOutputFolder = parser.addStringOption('o', "output");
 		CmdLineParser.Option optionConsolidate = parser.addBooleanOption('c',"consolidate");
-		CmdLineParser.Option optionCalculateThreshold = parser.addBooleanOption('t',"calculateThreshold");
+		CmdLineParser.Option optionCalculateThreshold = parser.addBooleanOption('j',"calculateThreshold");
 		CmdLineParser.Option optionPvalue = parser.addDoubleOption('p',"pvalue");
 		CmdLineParser.Option optionSeed = parser.addIntegerOption('s',"seed");
 		CmdLineParser.Option optionThreaded = parser.addIntegerOption('m',"threads");
 		CmdLineParser.Option optionNodpi = parser.addBooleanOption('n',"nodpi");
+		CmdLineParser.Option optionNobootstrap = parser.addBooleanOption('b',"nobootstrap");
+		CmdLineParser.Option optionNobonferroni = parser.addBooleanOption('r',"nobonferroni");
+		CmdLineParser.Option optionConsolidatepvalue = parser.addDoubleOption('v',"consolidatepvalue");
 
 		try {
 			parser.parse(args);
@@ -75,31 +73,31 @@ public class hpAracne {
 			noDPI = true;
 		}
 
+		boolean nobootstrap = false;
+		if ((Boolean)parser.getOptionValue(optionNobootstrap)!=null) {
+			nobootstrap = true;
+		}
+		
+		boolean nobonferroni = false;
+		if ((Boolean)parser.getOptionValue(optionNobonferroni)!=null) {
+			nobonferroni = true;
+		}
+		
+		Double consolidatePvalue;
+		try {
+			consolidatePvalue = new Double((Double)parser.getOptionValue(optionConsolidatepvalue));
+		} catch (Exception e) {
+			consolidatePvalue = 0.05;
+		}
+		
 
 		// Here the program forks
 		// You can calculate the MI threshold
-		// You can run a single bootstrap
+		// You can run a single bootstrap (or non bootstrap)
 		// You can consolidate bootstraps
-		if(noDPI){
-			String exp1File = (String)parser.getOptionValue(optionExpressionFile1);
-			File expressionFile1 = new File(exp1File);
-			File transcriptionFactorsFile = new File((String)parser.getOptionValue(optionTranscriptionFactorsFile));
-
-			Integer threadCount = (Integer)parser.getOptionValue(optionThreaded);
-
-			singlemode = true;
-
-			if(threadCount == null){
-				threadCount = 1;
-			}
-			
-			Double miPvalue = new Double((Double) parser.getOptionValue(optionPvalue));
-			runNoDPI(expressionFile1,transcriptionFactorsFile,outputFolder,miPvalue,threadCount);
-			System.exit(0);
-		}
 
 		if(isThreshold){
-			File expressionFile = new File((String)parser.getOptionValue(optionExpressionFile1));
+			File expressionFile = new File((String)parser.getOptionValue(optionExpressionFile));
 			outputFolder.mkdir();
 			Double miPvalue = new Double((Double) parser.getOptionValue(optionPvalue));
 			Integer seed = (Integer)parser.getOptionValue(optionSeed);
@@ -111,14 +109,11 @@ public class hpAracne {
 			runThreshold(expressionFile,outputFolder,miPvalue,seed);
 		}
 		else if(!isConsolidate){
-			String exp1File = (String)parser.getOptionValue(optionExpressionFile1);
-			File expressionFile1 = new File(exp1File);
-			
+			String expFile = (String)parser.getOptionValue(optionExpressionFile);
+			File expressionFile = new File(expFile);
 			File transcriptionFactorsFile = new File((String)parser.getOptionValue(optionTranscriptionFactorsFile));
 			Integer seed = (Integer)parser.getOptionValue(optionSeed);
 			Integer threadCount = (Integer)parser.getOptionValue(optionThreaded);
-
-			singlemode = true;
 
 			if(threadCount == null){
 				threadCount = 1;
@@ -131,9 +126,18 @@ public class hpAracne {
 			}
 			String processId = new BigInteger(130, random).toString(32);
 			Double miPvalue = new Double((Double) parser.getOptionValue(optionPvalue));
-			runBootsrap(expressionFile1,transcriptionFactorsFile,outputFolder,processId,miPvalue,threadCount,singlemode);
+			runAracne(
+					expressionFile,
+					transcriptionFactorsFile,
+					outputFolder,
+					processId,
+					miPvalue,
+					threadCount,
+					noDPI,
+					nobootstrap
+					);
 		} else {
-			runConsolidate(outputFolder);
+			runConsolidate(outputFolder,nobonferroni,consolidatePvalue);
 		}
 	}
 
@@ -161,34 +165,35 @@ public class hpAracne {
 		}
 		MI miCPU = new MI(em);
 		
-		System.out.println(sampleNumber);
 		miThreshold = miCPU.calibrateMIThresholdNA(data,geneNumberInMIthresholding,_miPvalue,_seed);
 		DataParser.writeValue(miThreshold, miThresholdFile);
 	}
 
-	// Single bootstrap mode
-	private static void runBootsrap(
-			File expressionFile1,
+	// Single run mode
+	private static void runAracne(
+			File expressionFile,
 			File transcriptionFactorsFile,
 			File outputFolder, 
 			String processId,
 			Double miPvalue,
-			Integer threadCount, boolean singlemode
+			Integer threadCount,
+			boolean noDPI, // Do not use DPI
+			boolean nobootstrap // Do not use bootstrap
 			) throws NumberFormatException, Exception {
 		long initialTime = System.currentTimeMillis();
-		// Read expression matrices and bootstrap them
-		DataMatrix em1 = new DataMatrix(expressionFile1);
-		System.out.println("Bootstrapping input matrix 1 with "+em1.getGenes().size()+" genes and "+em1.getSamples().size()+" samples");
+		// Read expression matrices 
+		DataMatrix dm = new DataMatrix(expressionFile);
 		
-		//compute a random selection of samples to build bootstrapped data
-		em1.bootstrap(random);
+		// Don't bootstrap them
+		if(!nobootstrap){
+			System.out.println("Bootstrapping input matrix 1 with "+dm.getGenes().size()+" genes and "+dm.getSamples().size()+" samples");
+			dm.bootstrap(random);
+		}
+		HashMap<String, DataVector> data = dm.data;
 
-		HashMap<String, DataVector> data = em1.data;
-		
 		// Check if the sample size is less than the short limit
-		int sampleNumber = em1.getSamples().size();
-		
-		if(sampleNumber > 32767){
+		int sampleNumber = dm.getSamples().size();
+		if(sampleNumber>32767){
 			System.err.println("Warning: sample number is higher than the short data limit");
 			System.exit(1);
 		}
@@ -213,12 +218,10 @@ public class hpAracne {
 		}
 		System.out.println("MI threshold file is present");
 		miThreshold = DataParser.readValue(miThresholdFile);
-		//miThreshold = 0;
+
 		// Calculate a single ARACNE (using the APAC4 implementation by Alex)
 		long time1 = System.currentTimeMillis();
-		
-		System.out.println("Calculate network from: "+expressionFile1);
-		
+		System.out.println("Calculate network from: "+expressionFile);
 		HashMap<String, HashMap<String, Double>> finalNetwork = new HashMap<String, HashMap<String, Double>>();
 		MI miCPU = new MI(data,tfList,miThreshold,threadCount);
 		finalNetwork = miCPU.getFinalNetwork();
@@ -226,12 +229,21 @@ public class hpAracne {
 
 		// And then calculate DPI
 		long time2 = System.currentTimeMillis();
-
-		HashMap<String, HashSet<String>> removedEdges = dpi(finalNetwork, threadCount);
-		System.out.println("DPI time elapsed: "+(System.currentTimeMillis() - time2)/1000+" sec");
+		HashMap<String, HashSet<String>> removedEdges;
+		if(noDPI){
+			removedEdges = new HashMap<String, HashSet<String>>();
+		}else {
+			removedEdges = dpi(finalNetwork, threadCount);
+			System.out.println("DPI time elapsed: "+(System.currentTimeMillis() - time2)/1000+" sec");
+		}
 
 		// And write out the single bootstrap network
-		File outputFile = new File(outputFolder.getAbsolutePath()+"/bootstrapNetwork_"+processId+".txt");
+		File outputFile;
+		if(nobootstrap){
+			outputFile = new File(outputFolder.getAbsolutePath()+"/nobootstrap_network.txt");
+		} else {
+			outputFile = new File(outputFolder.getAbsolutePath()+"/bootstrapNetwork_"+processId+".txt");
+		}
 		writeFinal(outputFile,removedEdges,finalNetwork);
 
 		long finalTime = System.currentTimeMillis();
@@ -239,15 +251,15 @@ public class hpAracne {
 	}
 
 	// This method consolidates the several bootstraps
-	private static void runConsolidate(File outputFolder) throws IOException {
-		BootstrapConsolidator c = new BootstrapConsolidator(false);
+	private static void runConsolidate(File outputFolder, boolean nobonferroni, Double consolidatePvalue) throws IOException {
+		BootstrapConsolidator c = new BootstrapConsolidator(nobonferroni);
 		c.mergeFiles(outputFolder);
+		String outputFile = outputFolder+"/network.txt";
 
-		// P-value for the Poisson distribution. Aka how many times an edge has to appear in the bootstraps to be kept.
+		
+		// consolidatePvalue is the P-value for the Poisson distribution. Aka how many times an edge has to appear in the bootstraps to be kept.
 		// Hard-coded to 0.3 in the original ARACNe
-		double pvalue = 0.05; 
-
-		c.writeSignificant(outputFolder+"/finalNetwork_4col.tsv", pvalue);
+		c.writeSignificant(outputFile, consolidatePvalue);
 
 		System.out.println("\n        :");
 		System.out.println("       :");
@@ -260,72 +272,14 @@ public class hpAracne {
 	// Method to read the expression file
 	// Method to load the TF list
 	// DPI method
-	private static HashMap<String, HashSet<String>> dpi(HashMap<String, HashMap<String, Double>> finalNet, int _threadNumber){
+	private static HashMap<String, HashSet<String>> dpi(
+			HashMap<String,
+			HashMap<String, Double>> finalNet,
+			int threadNumber
+		){
 		DPI dpi = new DPI();
-		return dpi.dpi(finalNet, _threadNumber);
+		return dpi.dpi(finalNet, threadNumber);
 	}
-	
-	
-	private static void runNoDPI(File expressionFile1,
-			File transcriptionFactorsFile, File outputFolder,
-			Double miPvalue, int threadCount) 
-					throws NumberFormatException, IOException, Exception {
-		long initialTime = System.currentTimeMillis();
-		// Read expression matrix and do not bootstrap it
-		DataMatrix em1 = new DataMatrix(expressionFile1);
-		HashMap<String, DataVector> data = em1.data;
-
-		// Check if the sample size is less than the short limit
-		int sampleNumber = em1.getSamples().size();
-		if(sampleNumber>32767){
-			System.err.println("Warning: sample number is higher than the short data limit");
-			System.exit(1);
-		}
-
-		// TF list
-		HashSet<String> tfSet = DataParser.readGeneSet(transcriptionFactorsFile);
-		String[] tfList = tfSet.toArray(new String[0]);
-		Arrays.sort(tfList);
-
-		if(tfList.length==0){
-			System.err.println("The transcription factor file is badly formatted or empty");
-			System.exit(1);
-		}
-
-		// Check if the threshold file exists
-//		File miThresholdFile = new File(outputFolder+"/miThreshold_p"+formatter.format(miPvalue)+"_samples"+sampleNumber+".txt");
-//		double miThreshold;
-//		if(!miThresholdFile.exists()){
-//			System.err.println("MI threshold file is not present.");
-//			System.err.println("Please run ARACNE in --calculateThreshold mode first");
-//			System.exit(1);
-//		}
-//		System.out.println("MI threshold file is present");
-//		miThreshold = DataParser.readValue(miThresholdFile);
-
-		// Calculate a single ARACNE (using the APAC4 implementation by Alex)
-		long time1 = System.currentTimeMillis();
-		System.out.println("Calculate network from: "+expressionFile1);
-
-		HashMap<String, HashMap<String, Double>> finalNetwork = new HashMap<String, HashMap<String, Double>>();
-		
-		MI miCPU = new MI(data,tfList,(double)-1,threadCount);
-		
-		finalNetwork = miCPU.getFinalNetwork();
-		System.out.println("Time elapsed for calculating MI: "+(System.currentTimeMillis() - time1)/1000+" sec\n");
-
-		// And then DO NOT calculate DPI
-		HashMap<String, HashSet<String>> removedEdges = new HashMap<String,HashSet<String>>();
-
-		// And write out the single bootstrap network
-		File outputFile = new File(outputFolder.getAbsolutePath()+"/aracneOutput_3col.txt");
-		writeFinal(outputFile,removedEdges,finalNetwork);
-
-		long finalTime = System.currentTimeMillis();
-		System.out.println("Total time elapsed: "+(finalTime - initialTime)/1000+" sec");
-
-	}
-
 
 	public static void writeFinal(File finalDPIfile, HashMap<String, HashSet<String>> removedEdges, HashMap<String, HashMap<String, Double>> finalNet){
 		try{
@@ -333,6 +287,10 @@ public class hpAracne {
 			int removed = 0;
 
 			BufferedWriter bw = new BufferedWriter(new FileWriter(finalDPIfile));
+			
+			// Header
+			bw.write("Regulator\tTarget\tMI\n");
+
 			for(String k : finalNet.keySet()){
 				HashSet<String> tr = null;
 				if(removedEdges.containsKey(k)){
@@ -360,7 +318,6 @@ public class hpAracne {
 		}
 	}
 }
-
 
 
 
