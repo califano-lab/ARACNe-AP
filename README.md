@@ -90,17 +90,17 @@ g4   7.2 9.1 0.6
 ``--nobonferroni`` removes the Bonferroni correction
 
 ## Examples
-Note: the examples have been written based on the provided test sets: ``matrix.txt`` (the gene expression matrix) and ``tfs.txt`` (the list of regulators). Also, example 3 (the running of 100 bootstraps) is written using a “for loop” as a useful method to run 100 bootstraps with a controlled seed.
+Note: the examples have been written based on the provided test sets: ``test/matrix.txt`` (the gene expression matrix) and ``test/tfs.txt`` (the list of regulators). Also, example 3 (the running of 100 bootstraps) is written using a “for loop” as a useful method to run 100 bootstraps with a controlled seed.
 
 ### Example 1: calculate threshold with a fixed seed
 ```
-java -Xmx5G -jar aracne.jar -e matrix.txt  -o outputFolder --tfs tfs.txt --pvalue 1E-8 --seed 1 \
+java -Xmx5G -jar aracne.jar -e test/matrix.txt  -o outputFolder --tfs test/tfs.txt --pvalue 1E-8 --seed 1 \
 --calculateThreshold
 ```
 
 ### Example 2: run ARACNe on a single bootstrap
 ```
-java -Xmx5G -jar aracne.jar -e matrix.txt  -o outputFolder --tfs tfs.txt --pvalue 1E-8 --seed 1
+java -Xmx5G -jar aracne.jar -e test/matrix.txt  -o outputFolder --tfs test/tfs.txt --pvalue 1E-8 --seed 1
 ```
 
 ### Example 3: run 100 reproducible bootstraps
@@ -108,12 +108,12 @@ java -Xmx5G -jar aracne.jar -e matrix.txt  -o outputFolder --tfs tfs.txt --pvalu
 ```
 for i in {1..100}
 do
-java -Xmx5G -jar aracne.jar -e matrix.txt  -o outputFolder --tfs tfs.txt --pvalue 1E-8 --seed $i
+java -Xmx5G -jar aracne.jar -e test/matrix.txt  -o outputFolder --tfs test/tfs.txt --pvalue 1E-8 --seed $i
 done
 ```
 #### Windows loop
 ```
-for /l %i in (1, 1, 100) do java -Xmx5G -jar aracne.jar -e matrix.txt  -o outputFolder --tfs tfs.txt \
+for /l %i in (1, 1, 100) do java -Xmx5G -jar aracne.jar -e test/matrix.txt  -o outputFolder --tfs test/tfs.txt \
 --pvalue 1E-8 --seed %i
 ```
 
@@ -124,7 +124,7 @@ java -Xmx5G -jar Aracne.jar -o outputFolder --consolidate
 
 ### Example 5: run a single ARACNE with no bootstrap and no DPI
 ```
-java -Xmx5G -jar Aracne.jar -e matrix.txt  -o outputFolder --tfs tfs.txt --pvalue 1E-8 --seed 1 \
+java -Xmx5G -jar Aracne.jar -e test/matrix.txt  -o outputFolder --tfs test/tfs.txt --pvalue 1E-8 --seed 1 \
 --nobootstrap --noDPI
 ```
 
