@@ -124,7 +124,8 @@ public class MI {
 			) {
 		this.genes = rankData2.keySet().toArray(new String[0]);
 		Arrays.sort(genes);
-		this.setSampleNumber(rankData1.get(genes[0]).length);
+	        String[] genes1 = rankData1.keySet().toArray(new String[0]);
+		this.setSampleNumber(rankData1.get(genes1[0]).length);
 
 		List<String> templist = Arrays.asList(tfList);
 		HashSet<String> temptf = new HashSet<String>(templist);
