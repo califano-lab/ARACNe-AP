@@ -129,7 +129,7 @@ public class MI {
 
 		List<String> templist = Arrays.asList(tfList);
 		HashSet<String> temptf = new HashSet<String>(templist);
-		temptf.retainAll(new HashSet<String>(Arrays.asList(genes)));
+		temptf.retainAll(new HashSet<String>(Arrays.asList(genes1)));
 		tfList = temptf.toArray(new String[0]);
 		Arrays.sort(tfList);
 
